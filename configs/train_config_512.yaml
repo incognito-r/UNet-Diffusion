@@ -1,0 +1,66 @@
+# configs/train_config.yaml
+
+data:
+  path: "data/CelebA-HQ/images_512"  # Local Images Path
+  parquet_path: "/dbfs/mnt/ds-space/Hitesh/Datasets/CelebA-HQ/parquet_files/CelebA-HQ.parquet"  # Parquet Dataset Path:  /dbfs/mnt/ds-space/Hitesh/Datasets/CelebA-HQ/parquet_files/CelebA-HQ.parquet
+  image_size: 512            
+  normalize: True
+  captions: "data/CelebA-HQ-Captions.csv" #  Latter 
+
+checkpoint:
+  path: "/dbfs/mnt/ds-space/Hitesh/Checkpoints/" # Checkpoint Path: /dbfs/mnt/ds-space/Hitesh/Checkpoints/
+  ckpt_name: "dit_diffusion_ckpt_512.pth"
+  ema_ckpt_name: "dit_diffusion_ema_ckpt_512.pth"
+
+output_dir:
+  train: "output/train" # Training Samples Output Directory
+  test: "output/test" # Inference Samples Output Directory
+
+training:
+  batch_size: 8
+  validation_split: 0
+  epochs: 100
+  warmup_epochs: 10
+  lr: 1e-4
+  grad_accum_steps: 2
+  use_ema: true
+  ema_beta: 0.995
+  step_start_ema: 2000
+  num_workers: 4
+
+sampling:
+  dir: "output/samples"
+  num_samples: 25                    # Keep same for consistency
+  steps: 50             # Adjusted for faster inference
+  # guidance_scale: 7.5                 # Adjusted for better quality
+
+model:
+  type: unet
+  sample_size: 64          # 512 / 8
+  in_channels: 4
+  out_channels: 4
+  block_out_channels: [320, 640, 1280, 1280, 1600]
+  down_block_types:
+    - CrossAttnDownBlock2D
+    - CrossAttnDownBlock2D
+    - DownBlock2D
+    - DownBlock2D
+    - DownBlock2D
+  up_block_types:
+    - UpBlock2D
+    - UpBlock2D
+    - CrossAttnUpBlock2D
+    - CrossAttnUpBlock2D
+    - CrossAttnUpBlock2D
+  layers_per_block: 2
+  cross_attention_dim: 768
+
+
+
+scheduler:
+  type: squaredcos_cap_v2
+  timesteps: 1000
+  beta_start: 0.0001
+  beta_end: 0.02
+
+logs: "logs"

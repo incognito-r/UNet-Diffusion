@@ -1,0 +1,7 @@
+tqdm
+diffusers
+pynvml
+transformers
+accelerate
+omegaconf
+lpips
