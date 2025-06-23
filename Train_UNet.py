@@ -27,15 +27,15 @@ def main():
 
     # Load configuration
     config = OmegaConf.load("configs/train_config_256.yaml")
-    # config = OmegaConf.load("configs/train_config_512.yaml"
+    
+    # config = OmegaConf.load("configs/train_config_512.yaml")
     print(f"Configuration loaded: {OmegaConf.to_yaml(config)}")
     #==================================================================
 
     # === Load VAE from diffusers ===
     vae = AutoencoderKL.from_pretrained("stabilityai/sd-vae-ft-ema").to(device).eval()
 
-    # === Load DiT from diffusers ===
-    block_out_ch = (256, 512, 1024, 1024)
+    # === Load UNet2DConditionModel from diffusers ===
 
     model = UNet2DConditionModel(
         sample_size=config.model.sample_size,
@@ -80,11 +80,10 @@ def main():
     
     # batch = next(iter(dataloader))
     # print(f"Batch image shape: {batch['image'].shape}, Batch captions: {len(batch['caption'])}, Batch images path: {len(batch['img_path'])}")
-    # Dataset size: 30000 images
-    # Batch image shape: torch.Size([12, 3, 256, 256]), Batch captions: 12, Batch images path: 12
 
     # === Load checkpoint ===
     checkpoint_dir = config.checkpoint.path
+    os.makedirs(checkpoint_dir, exist_ok=True)
     unet_ckpt_path = os.path.join(checkpoint_dir, config.checkpoint.ckpt_name)
     # ckpt_path = "checkpoints/unet_diffusion_ckpt_256.pth"
     # ema_ckpt_path = "checkpoints/unet_diffusion_ema_ckpt_256.pth"

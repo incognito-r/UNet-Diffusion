@@ -4,9 +4,7 @@ from PIL import Image
 from torch.utils.data import Dataset, DataLoader, Subset
 from torchvision import transforms
 import pyarrow.parquet as pq
-from datasets import import Dataset as HFDataset
-
-
+from datasets import Dataset as HFDataset
 
 class CelebADataset(Dataset):
     def __init__(self, config):
