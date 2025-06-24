@@ -11,8 +11,8 @@ checkpoint:
   ema_ckpt_name: UNet_ema_ckpt_test.pth
 
 training:
-  batch_size: 16          # small batch for faster iteration
-  validation_split: 0.7   # use only 1% for training
+  batch_size: 4          # small batch for faster iteration
+  validation_split: 0.95   # use only 1% for training
   epochs: 6               # very short training
   warmup_epochs: 1        # LPIPS kicks in early
   lr: 1e-4
@@ -20,7 +20,11 @@ training:
   use_ema: true
   ema_beta: 0.995
   step_start_ema: 0
-  num_workers: 4         
+  num_workers: 4 
+  
+losses:
+  lpips:
+    net: alex      
 
 sampling:
   dir: output/test_samples

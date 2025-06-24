@@ -10,31 +10,11 @@ from utils.ema import create_ema_model
 from utils.checkpoint import save_training_state, load_training_state
 from utils.celeba_with_caption import CelebAloader
 from utils.metrics.gpu import init_nvml, gpu_info
+from utils.loss.lpips import safe_lpips
 from omegaconf import OmegaConf
-import lpips
+
 from utils.generate_samples import generate_sample
-
-def safe_lpips(pred_rgb, target_rgb, lpips_model, device):
-    """
-    Computes LPIPS loss safely, avoiding NaNs or Infs.
-
-    Args:
-        pred_rgb (torch.Tensor): Predicted images in [-1, 1], shape [B, 3, H, W]
-        target_rgb (torch.Tensor): Ground-truth images in [-1, 1], shape [B, 3, H, W]
-        lpips_model (lpips.LPIPS): An instance of the LPIPS model
-        device (str or torch.device): Device for returning zero loss if invalid
-
-    Returns:
-        torch.Tensor: Scalar LPIPS loss or 0.0 if NaN/Inf
-    """
-    with torch.no_grad():
-        val = lpips_model(pred_rgb, target_rgb).mean()
-
-    if torch.isnan(val) or torch.isinf(val):
-        print("⚠️ LPIPS loss returned NaN or Inf. Skipping this batch.")
-        return torch.tensor(0.0, device=device)
-    return val
-
+import lpips
 
 def main():
     torch.manual_seed(1)
@@ -48,8 +28,8 @@ def main():
     print("Mixed precision training enabled" if device == "cuda" else "Mixed precision training disabled")
 
     # Load configuration
-    config = OmegaConf.load("configs/train_config_256.yaml")
-    # config = OmegaConf.load("configs/temp.yaml")
+    # config = OmegaConf.load("configs/train_config_256.yaml")
+    config = OmegaConf.load("configs/temp.yaml")
     print(f"Configuration loaded: {OmegaConf.to_yaml(config)}")
 
     # Load VAE
@@ -88,7 +68,7 @@ def main():
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=config.training.lr)
     MSE_LOSS = torch.nn.MSELoss()
-    LPIPS_LOSS = lpips.LPIPS(net='vgg').to(device).eval()
+    LPIPS_LOSS   = lpips.LPIPS(net=config.losses.lpips.net).to(device).eval() # net=vgg or alex
 
     # Data
     dataloader, _ = CelebAloader(data_config=config.data, train_config=config.training)
@@ -100,10 +80,11 @@ def main():
     start_epoch, best_loss = load_training_state(ckpt_path, model, optimizer, device)
     print(f"Resuming from epoch {start_epoch}, best_loss {best_loss:.4f}")
 
-    warmup_ep = config.training.warmup_epochs
     # Baseline visual before training
     generate_sample(0, vae, unet_ema_model, scheduler, clip_tokenizer, clip_encoder, config, device)
 
+    # === Training loop ===
+    warmup_ep = config.training.warmup_epochs
     for epoch in range(start_epoch, config.training.epochs):
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
@@ -114,7 +95,6 @@ def main():
         cumm_loss = 0.0
         cumm_mse = 0.0
         cumm_lpips = 0.0
-
 
         pbar = tqdm(enumerate(dataloader), total=len(dataloader), desc=f"Epoch {epoch+1}/{config.training.epochs}")
         for batch_idx, batch in pbar:
@@ -155,7 +135,7 @@ def main():
                     pred_x0 = (x_t - (1 - alpha_t).sqrt() * noise_pred) / alpha_t.sqrt()
                     pred_rgb = vae.decode(pred_x0 / 0.18215).sample.clamp(-1, 1)
 
-                     # Safe LPIPS computation
+                    # Safe LPIPS computation
                     lpips_loss = safe_lpips(pred_rgb, images, LPIPS_LOSS, device)
                 else:
                     lpips_loss = torch.tensor(0.0, device=device)
@@ -182,7 +162,7 @@ def main():
 
             best_loss = min(best_loss, avg_loss)
             pbar.set_postfix(avg_loss=avg_loss, mem=gpu_info(handle))
-            if (batch_idx+1) % 2 == 0:
+            if (batch_idx+1) % 5 == 0:
                 logging.info(f"Epoch {epoch+1} AVG MSE: {avg_mse:.4f}, AVG LPIPS: {avg_lpips:.4f}, AVG Total: {avg_loss:.4f}")
 
          # Epoch summary logging

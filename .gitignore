@@ -43,7 +43,6 @@ ENV/
 *.ckpt
 checkpoints/
 runs/
-logs/
 
 # Dataset and Output
 checkpoints/

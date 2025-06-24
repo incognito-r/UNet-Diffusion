@@ -1,16 +1,16 @@
 # configs/train_config.yaml
 
 data:
-  path: "data/CelebA-HQ/images_512"  # Local Images Path
-  parquet_path: "/dbfs/mnt/ds-space/Hitesh/Datasets/CelebA-HQ/parquet_files/CelebA-HQ.parquet"
+  path: data/CelebA-HQ/images_512  # Local Images Path
+  parquet_path: /dbfs/mnt/ds-space/Hitesh/Datasets/CelebA-HQ/parquet_files/CelebA-HQ.parquet
   image_size: 256             
   normalize: true
-  caption_path: "data/CelebA-HQ/captions.csv"
+  caption_path: data/CelebA-HQ/captions.csv
 
 checkpoint:
-  path: "Checkpoints" 
-  ckpt_name: "UNet_ckpt_256.pth"
-  ema_ckpt_name: "UNet_ema_ckpt_256.pth"
+  path: Checkpoints
+  ckpt_name: UNet_ckpt_256.pth
+  ema_ckpt_name: UNet_ema_ckpt_256.pth
 
 training:
   batch_size: 4
@@ -24,8 +24,12 @@ training:
   step_start_ema: 2000
   num_workers: 4
 
+losses:
+  lpips:
+    net: alex
+
 sampling:
-  dir: "output/samples"
+  dir: output/samples
   num_samples: 25
   steps: 50
   guidance_scale: 7.5
