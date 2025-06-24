@@ -53,6 +53,7 @@ outputs/
 logs/
 uploads/
 backup/
+temp/
 
 *.jpg
 *.jpeg

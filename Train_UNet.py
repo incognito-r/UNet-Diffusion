@@ -54,7 +54,7 @@ def main():
         num_train_timesteps=config.scheduler.timesteps,
         beta_start=config.scheduler.beta_start,
         beta_end=config.scheduler.beta_end,
-        beta_schedule="linear",
+        beta_schedule=config.scheduler.type,
     )
     # === Load CLIP tokenizer and encoder ===
     clip_tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
@@ -142,29 +142,29 @@ def main():
                 # ==== Loss Calculation ===
                 mse_loss = MSE_LOSS_Unet(noise_pred, noise) / config.training.grad_accum_steps
 
-                # -----
-                if epoch+1 < warmup_ep: # No other loss
-                    lpips_loss = 0.0
-                    lpips_weight = 0.0
+                # # -----
+                # if epoch+1 < warmup_ep: # No other loss
+                #     lpips_loss = 0.0
+                #     lpips_weight = 0.0
 
-                else: # Compute LPIPS loss or other losses
-                    pred_x0 = scheduler.step(noise_pred, t[0].item(), x_t).pred_original_sample
-                    pred_rgb = vae.decode(pred_x0 / 0.18215).sample.clamp(-1, 1)
+                # else: # Compute LPIPS loss or other losses
+                #     pred_x0 = scheduler.step(noise_pred, t[0].item(), x_t).pred_original_sample
+                #     pred_rgb = vae.decode(pred_x0 / 0.18215).sample.clamp(-1, 1)
 
-                    lpips_loss = LPIPS_LOSS(pred_rgb, images).mean()
+                #     lpips_loss = LPIPS_LOSS(pred_rgb, images).mean()
                     
-                    # gradually increase loss weights
-                    if epoch+1 < 50:
-                        lpips_weight = 0.05 * (epoch+1 - warmup_ep) / (30 - warmup_ep)
-                    else:
-                        lpips_weight = 0.1
-                # -----
+                #     # gradually increase loss weights
+                #     if epoch+1 < 50:
+                #         lpips_weight = 0.05 * (epoch+1 - warmup_ep) / (30 - warmup_ep)
+                #     else:
+                #         lpips_weight = 0.1
+                # # -----
         
-                # Total loss
-                total_loss= mse_loss + lpips_weight * lpips_loss
-                # ======================
+                # # Total loss
+                # total_loss= mse_loss + lpips_weight * lpips_loss
+                # # ======================
               
-            loss = total_loss
+            loss = mse_loss
 
             # ---- Backward Pass ----
             scaler.scale(loss).backward()  

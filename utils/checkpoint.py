@@ -3,29 +3,6 @@ import torch
 from datetime import datetime
 import csv
 
-def save_metadata(checkpoint_dir, epoch, checkpoint_path, avg_loss, best_loss):
-    # Use different files for regular and best checkpoints
-    metadata_file = os.path.join(checkpoint_dir, "training_metadata.csv")
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    # Create metadata entry
-    metadata_entry = {
-        'timestamp': timestamp,
-        'epoch': epoch,
-        'checkpoint_path': checkpoint_path,
-        'avg_loss': f"{avg_loss:.6f}",
-        'best_loss': f"{best_loss:.6f}"
-    }
-
-    # Check if file exists to determine if we need to write headers
-    file_exists = os.path.exists(metadata_file)
-    
-    # Append to metadata file
-    with open(metadata_file, 'a', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=metadata_entry.keys())
-        if not file_exists:
-            writer.writeheader()
-        writer.writerow(metadata_entry)
 
 def load_training_state(checkpoint_path, model, optimizer, discriminator=None, optimizer_d=None, 
                       lr_scheduler=None, device='cpu'):
@@ -82,12 +59,7 @@ def save_training_state(checkpoint_path, epoch, model, optimizer, avg_loss, best
     if lr_scheduler:
         ckpt["lr_scheduler_state_dict"] = lr_scheduler.state_dict()
         print("Learning Rate Scheduler Saved!!")
-    
-    torch.save(ckpt, checkpoint_path)
-    print(f"💾 Saved checkpoint at epoch {epoch+1}")
-    
 
-    # ===== Save metadata after saving the checkpoint =====
-    # Save metadata. This will create or append to a CSV file in the same directory
-    checkpoint_dir = os.path.dirname(checkpoint_path)
-    save_metadata(checkpoint_dir, epoch+1, checkpoint_path, avg_loss, best_loss if best_loss is not None else avg_loss)
+    # Save checkpoint
+    torch.save(ckpt, checkpoint_path)
+    

@@ -13,8 +13,8 @@ checkpoint:
   ema_ckpt_name: "UNet_ema_ckpt_256.pth"
 
 training:
-  batch_size: 4
-  validation_split: 0.995
+  batch_size: 8
+  validation_split: 0
   epochs: 100
   warmup_epochs: 10
   lr: 1e-4
@@ -28,7 +28,7 @@ sampling:
   dir: "output/samples"
   num_samples: 25
   steps: 50
-  guidance_scale: 7.5
+  guidance_scale: 7.5           # Adjusted for better quality
 
 model:
   type: unet
@@ -57,6 +57,7 @@ model:
   flip_sin_to_cos: true
   freq_shift: 0
   mid_block_scale_factor: 1
+
 
 scheduler:
   type: squaredcos_cap_v2
