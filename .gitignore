@@ -49,7 +49,6 @@ checkpoints/
 data/
 output/
 outputs/
-logs/
 uploads/
 backup/
 temp/
