@@ -31,6 +31,7 @@ class CelebADataset(Dataset):
             raise FileNotFoundError(f"Caption file {caption_file} not found")
         with open(caption_file) as f:
             reader = csv.reader(f)
+            next(reader)  # Skip the header row
             for row in reader:
                 if len(row) < 3:
                     continue

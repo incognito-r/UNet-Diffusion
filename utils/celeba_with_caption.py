@@ -5,22 +5,20 @@ from torch.utils.data import Dataset, DataLoader, Subset
 from torchvision import transforms
 
 
-
 class CelebADataset(Dataset):
     def __init__(self, config):
         self.img_dir = config.path
-        self.img_size = config.image_size 
-        self.filenames = sorted([f for f in os.listdir(self.img_dir) if f.endswith('.jpg') or f.endswith('.png')]) # In one folder
-        # Include all .jpg and .png files from subdirectories
-        # self.filenames = sorted([
-        #     os.path.join(root, f)
-        #     for root, _, files in os.walk(self.img_dir)
-        #     for f in files
-        #     if f.lower().endswith('.jpg') or f.lower().endswith('.png')
-        # ])
+        self.img_size = config.image_size
 
-        # Load captions
-        self.default_caption = 'A beautiful portrait of a person'
+        self.valid_ext = ['png', 'jpg', 'jpeg', 'webp']
+        self.img_names = sorted([
+            os.path.relpath(os.path.join(root, f), self.img_dir)
+            for root, _, files in os.walk(self.img_dir)
+            for f in files
+            if os.path.splitext(f)[1][1:].lower() in self.valid_ext
+        ], key=lambda x: int(os.path.splitext(os.path.basename(x))[0]))
+
+        self.default_caption = 'portrait of a person'
         self.captions = {}
         self._load_captions(config.caption_path)
 
@@ -34,8 +32,9 @@ class CelebADataset(Dataset):
     def _load_captions(self, caption_file):
         if not os.path.exists(caption_file):
             raise FileNotFoundError(f"Caption file {caption_file} not found")
-        with open(caption_file) as f:
+        with open(caption_file, 'r', encoding='utf-8') as f:
             reader = csv.reader(f)
+            next(reader)  # Skip the header row
             for row in reader:
                 if len(row) < 3:
                     continue
@@ -43,15 +42,12 @@ class CelebADataset(Dataset):
                 self.captions[filename] = row[2].strip()
 
     def __len__(self):
-        return len(self.filenames)
+        return len(self.img_names)
 
     def __getitem__(self, index):
-        img_path = os.path.join(self.img_dir, self.filenames[index])
-        # img_path = self.filenames[index]
-        # img_path = os.path.join(self.img_dir, self.filenames[index])
+        img_path = os.path.join(self.img_dir, self.img_names[index])
         rgb_img = Image.open(img_path).convert('RGB')
         img_tensor = self.T(rgb_img)
-
 
         file_name = os.path.basename(img_path)
         caption = self.captions.get(file_name, self.default_caption)
@@ -82,7 +78,7 @@ def CelebAloader(data_config, train_config):
     train_loader = DataLoader(
         dataset=train_subset,
         batch_size=batch_size,
-        shuffle=True,
+        shuffle=False,
         num_workers=num_workers,
         pin_memory=True,
         persistent_workers=True,
