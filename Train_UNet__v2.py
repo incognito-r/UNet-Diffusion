@@ -28,8 +28,8 @@ def main():
     print("Mixed precision training enabled" if device == "cuda" else "Mixed precision training disabled")
 
     # Load configuration
-    # config = OmegaConf.load("configs/train_config_256.yaml")
-    config = OmegaConf.load("configs/temp.yaml")
+    config = OmegaConf.load("configs/train_config_256.yaml")
+    # config = OmegaConf.load("configs/temp.yaml")
     print(f"Configuration loaded: {OmegaConf.to_yaml(config)}")
 
     # Load VAE
@@ -71,8 +71,13 @@ def main():
     LPIPS_LOSS   = lpips.LPIPS(net=config.losses.lpips.net).to(device).eval() # net=vgg or alex
 
     # Data
-    dataloader, _ = CelebAloader(data_config=config.data, train_config=config.training)
-    print(f"Dataset size: {len(dataloader.dataset)} images, batch size: {dataloader.batch_size}")
+    dataloader, _ = CelebAloader(data_config=config.data, train_config=config.training, device=device)
+    print(f"Total Images: {len(dataloader.dataset)}, batch size: {dataloader.batch_size}")
+
+    batch = next(iter(dataloader))
+    print(f"Batch images shape: {batch['image'].shape}, Batch captions: {len(batch['caption'])}, Batch images path: {len(batch['img_path'])}")
+    # Dataset size: 30000 images
+    # Batch image shape: torch.Size([12, 3, 256, 256]), Batch captions: 12, Batch images path: 12
 
     # Checkpoint
     os.makedirs(config.checkpoint.path, exist_ok=True)

@@ -11,8 +11,8 @@ class CelebADataset(Dataset):
         self.img_size = config.image_size
 
         self.valid_ext = ['png', 'jpg', 'jpeg', 'webp']
-        self.img_names = sorted([
-            os.path.relpath(os.path.join(root, f), self.img_dir)
+        self.img_paths = sorted([
+            os.path.relpath(os.path.join(root, f), self.img_dir).replace("\\", "/")
             for root, _, files in os.walk(self.img_dir)
             for f in files
             if os.path.splitext(f)[1][1:].lower() in self.valid_ext
@@ -42,15 +42,16 @@ class CelebADataset(Dataset):
                 self.captions[filename] = row[2].strip()
 
     def __len__(self):
-        return len(self.img_names)
+        return len(self.img_paths)
 
     def __getitem__(self, index):
-        img_path = os.path.join(self.img_dir, self.img_names[index])
+
+        img_path = os.path.join(self.img_dir, self.img_paths[index])
+        img_basename = os.path.basename(img_path)
+        caption = self.captions.get(img_basename, self.default_caption)
+
         rgb_img = Image.open(img_path).convert('RGB')
         img_tensor = self.T(rgb_img)
-
-        file_name = os.path.basename(img_path)
-        caption = self.captions.get(file_name, self.default_caption)
 
         return {
             'image': img_tensor,
@@ -59,10 +60,11 @@ class CelebADataset(Dataset):
         }
 
 #------------------------------------------------------------------------------
-def CelebAloader(data_config, train_config):
+def CelebAloader(data_config, train_config, device='cuda'):
     val_split = train_config.get('validation_split', 0)  
     batch_size = train_config.get('batch_size', 32) 
-    num_workers = train_config.get('num_workers', 4) 
+    num_workers = train_config.get('num_workers', 0)
+    pref_factor = train_config.get('prefetch_factor', None)
 
     full_dataset = CelebADataset(config=data_config)
     total_len = len(full_dataset)
@@ -78,11 +80,12 @@ def CelebAloader(data_config, train_config):
     train_loader = DataLoader(
         dataset=train_subset,
         batch_size=batch_size,
-        shuffle=False,
+        shuffle=True,
         num_workers=num_workers,
         pin_memory=True,
+        pin_memory_device=device,
         persistent_workers=True,
-        prefetch_factor=2
+        prefetch_factor=pref_factor
     )
 
     val_loader = DataLoader(
@@ -92,7 +95,7 @@ def CelebAloader(data_config, train_config):
         num_workers=num_workers,
         pin_memory=True,
         persistent_workers=True,
-        prefetch_factor=2
+        prefetch_factor=pref_factor
     )
 
     return train_loader, val_loader
