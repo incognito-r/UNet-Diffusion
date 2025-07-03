@@ -123,47 +123,22 @@ def main():
             with torch.no_grad():
                 text_outputs = clip_encoder(**text_inputs)
                 text_embeddings = text_outputs.last_hidden_state   # (B, 77, 768)
-
-            # ---- VAE Encoding ----
-            with torch.no_grad():
+                # ---- VAE Encoding ----
                 latents = vae.encode(images).latent_dist.sample() * 0.18215
 
             # ---- Forward Diffusion ----
             t = torch.randint(0, scheduler.config.num_train_timesteps, (latents.size(0),), device=device)
-
             noise = torch.randn_like(latents)
             x_t = scheduler.add_noise(latents, noise, t)
 
             # ---- Noise Prediction ----
             with torch.amp.autocast('cuda', enabled=(scaler is not None)):
           
-                noise_pred = model(x_t, timestep=t, encoder_hidden_states=text_embeddings).sample # here -----
+                noise_pred = model(x_t, timestep=t, encoder_hidden_states=text_embeddings).sample
                 
                 # ==== Loss Calculation ===
                 mse_loss = MSE_LOSS_Unet(noise_pred, noise) / config.training.grad_accum_steps
-
-                # # -----
-                # if epoch+1 < warmup_ep: # No other loss
-                #     lpips_loss = 0.0
-                #     lpips_weight = 0.0
-
-                # else: # Compute LPIPS loss or other losses
-                #     pred_x0 = scheduler.step(noise_pred, t[0].item(), x_t).pred_original_sample
-                #     pred_rgb = vae.decode(pred_x0 / 0.18215).sample.clamp(-1, 1)
-
-                #     lpips_loss = LPIPS_LOSS(pred_rgb, images).mean()
-                    
-                #     # gradually increase loss weights
-                #     if epoch+1 < 50:
-                #         lpips_weight = 0.05 * (epoch+1 - warmup_ep) / (30 - warmup_ep)
-                #     else:
-                #         lpips_weight = 0.1
-                # # -----
-        
-                # # Total loss
-                # total_loss= mse_loss + lpips_weight * lpips_loss
-                # # ======================
-              
+ 
             loss = mse_loss
 
             # ---- Backward Pass ----

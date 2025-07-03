@@ -1,18 +1,18 @@
 # configs/train_config_256.yaml
 
 data:
-  parquet_path: "/dbfs/mnt/ds-space/Hitesh/Datasets/CelebA-HQ/parquet_files/CelebA-HQ.parquet"
+  parquet_path: /dbfs/mnt/ds-space/Hitesh/Datasets/CelebA-HQ/parquet_files/CelebA-HQ.parquet
   image_size: 256
   normalize: true
   caption_path: "data/CelebA-HQ/captions.csv"
 
 checkpoint:
-  path: "/dbfs/mnt/ds-space/Hitesh/UNet-Diffusion/checkpoints/"
-  ckpt_name: "UNet_ckpt_256.pth"
-  ema_ckpt_name: "UNet_ema_ckpt_256.pth"
+  path: /dbfs/mnt/ds-space/Hitesh/UNet-Diffusion/checkpoints/
+  ckpt_name: UNet_ckpt_256.pth
+  ema_ckpt_name: UNet_ema_ckpt_256.pth
 
 training:
-  batch_size: 32
+  batch_size: 16
   validation_split: 0
   epochs: 20
   warmup_epochs: 10
@@ -21,14 +21,14 @@ training:
   use_ema: true
   ema_beta: 0.995
   step_start_ema: 2000
-  num_workers: 4
+  num_workers: 8
 
 losses:
   lpips:
-    net: alex
+    net: vgg
 
 sampling:
-  dir: "output/samples"
+  dir: output/samples
   num_samples: 25
   steps: 50
   guidance_scale: 7.5
@@ -53,9 +53,20 @@ model:
   cross_attention_dim: 768
 
 scheduler:
-  type: "squaredcos_cap_v2"
+  type: squaredcos_cap_v2
   timesteps: 1000
   beta_start: 0.0001
   beta_end: 0.02
 
-logs: "logs"
+logs: logs
+
+pretrained_models:
+  vae_dir: /dbfs/mnt/ds-space/Hitesh/UNet-Diffusion/pretrained_models/stabilityai/sd-vae-ft-ema/
+  clip_dir: /dbfs/mnt/ds-space/Hitesh/UNet-Diffusion/pretrained_models/openai/clip-vit-large-patch14/
+  lpips_path_vgg: /dbfs/mnt/ds-space/Hitesh/UNet-Diffusion/pretrained_models/lpips/vgg.pth
+  lpips_path_alex: /dbfs/mnt/ds-space/Hitesh/UNet-Diffusion/pretrained_models/lpips/alex.pth
+
+
+  
+  
+

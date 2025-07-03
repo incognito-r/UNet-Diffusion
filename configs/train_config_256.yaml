@@ -1,11 +1,11 @@
 # configs/train_config.yaml
 
 data:
-  path: data/CelebA/  # Local Images Path
-  parquet_path: None # /dbfs/mnt/ds-space/Hitesh/Datasets/CelebA-HQ/parquet_files/CelebA-HQ.parquet
+  path: data/images/  # Local Images Path
+  parquet_path: data/celebA_dataset_high.parquet # /dbfs/mnt/ds-space/Hitesh/Datasets/CelebA-HQ/parquet_files/CelebA-HQ.parquet
   image_size: 256             
   normalize: true
-  caption_path: data/captions.csv
+  caption_path: data/captions.jsonl
 
 checkpoint:
   path: Checkpoints/
@@ -15,10 +15,10 @@ checkpoint:
 training:
   batch_size: 4
   validation_split: 0
-  epochs: 100
+  epochs: 10
   warmup_epochs: 10
   lr: 1e-4
-  grad_accum_steps: 2
+  grad_accum_steps: 4
   use_ema: true
   ema_beta: 0.995
   step_start_ema: 2000
@@ -26,8 +26,9 @@ training:
   prefetch_factor: 2
 
 losses:
+  use_lpips: false
   lpips:
-    net: alex
+    net: vgg
 
 sampling:
   dir: output/samples/

@@ -1,51 +1,58 @@
 import os
-import csv
+import json
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader, Subset
 from torchvision import transforms
+from torchvision.transforms import functional as F
 
+
+class SmartResize:
+    def __init__(self, size):
+        self.size = size
+
+    def __call__(self, img):
+        w, h = img.size
+        if w > self.size[0] and h > self.size[1]:
+            return F.resize(img, self.size, interpolation=transforms.InterpolationMode.LANCZOS)
+        else:
+            return F.resize(img, self.size, interpolation=transforms.InterpolationMode.BICUBIC)
 
 class CelebADataset(Dataset):
     def __init__(self, config):
         self.img_dir = config.path
         self.img_size = config.image_size
 
-        self.valid_ext = ['png', 'jpg', 'jpeg', 'webp']
+        self.valid_ext = ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'tiff', 'tif']
         self.img_paths = sorted([
             os.path.relpath(os.path.join(root, f), self.img_dir).replace("\\", "/")
             for root, _, files in os.walk(self.img_dir)
             for f in files
             if os.path.splitext(f)[1][1:].lower() in self.valid_ext
-        ], key=lambda x: int(os.path.splitext(os.path.basename(x))[0]))
+        ])
 
         self.default_caption = 'portrait of a person'
         self.captions = {}
         self._load_captions(config.caption_path)
 
         self.T = transforms.Compose([
-            transforms.Resize(self.img_size),  # Resize to the specified size
-            transforms.CenterCrop(self.img_size), # Ensure the image size
-            transforms.ToTensor(),  # Converts to [0,1]
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))  # Normalize to [-1, 1]
+            SmartResize((self.img_size, self.img_size)),
+            transforms.CenterCrop(self.img_size),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         ])
 
-    def _load_captions(self, caption_file):
-        if not os.path.exists(caption_file):
-            raise FileNotFoundError(f"Caption file {caption_file} not found")
-        with open(caption_file, 'r', encoding='utf-8') as f:
-            reader = csv.reader(f)
-            next(reader)  # Skip the header row
-            for row in reader:
-                if len(row) < 3:
-                    continue
-                filename = os.path.basename(row[0])
-                self.captions[filename] = row[2].strip()
+    def _load_captions(self, caption_path):
+        if not os.path.exists(caption_path):
+            raise FileNotFoundError(f"Caption file {caption_path} not found")
+        with open(caption_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                entry = json.loads(line)
+                self.captions[entry["file_name"]] = entry["text"]
 
     def __len__(self):
         return len(self.img_paths)
 
     def __getitem__(self, index):
-
         img_path = os.path.join(self.img_dir, self.img_paths[index])
         img_basename = os.path.basename(img_path)
         caption = self.captions.get(img_basename, self.default_caption)
