@@ -2,7 +2,7 @@
 
 data:
   path: data/images/  # Local Images Path
-  parquet_path: data/celebA_dataset_high.parquet # /dbfs/mnt/ds-space/Hitesh/Datasets/CelebA-HQ/parquet_files/CelebA-HQ.parquet
+  parquet_path: data/parquet # /dbfs/mnt/ds-space/Hitesh/Datasets/CelebA-HQ/parquet_files/CelebA-HQ.parquet
   image_size: 256             
   normalize: true
   caption_path: data/captions.jsonl
@@ -16,17 +16,17 @@ training:
   batch_size: 4
   validation_split: 0
   epochs: 10
-  warmup_epochs: 10
   lr: 1e-4
-  grad_accum_steps: 4
+  grad_accum_steps: 2
   use_ema: true
   ema_beta: 0.995
   step_start_ema: 2000
   num_workers: 4
   prefetch_factor: 2
+  use_lpips: false
+  warmup_epochs: 5
 
 losses:
-  use_lpips: false
   lpips:
     net: vgg
 
@@ -54,20 +54,18 @@ model:
     - CrossAttnUpBlock2D           # 16x16 → 32x32
   layers_per_block: 2              # 2 resblocks per stage
   cross_attention_dim: 768         # CLIP ViT-L/14 embedding size
-  attention_head_dim: 8            # matches SD1.5 defaults
-  act_fn: silu                     # smooth activation function
-  norm_eps: 1e-5                   # layernorm epsilon
-  norm_num_groups: 32             # for GroupNorm
-  center_input_sample: false
-  downsample_padding: 1
-  flip_sin_to_cos: true
-  freq_shift: 0
-  mid_block_scale_factor: 1
+  # attention_head_dim: 8            # matches SD1.5 defaults
+  # act_fn: silu                     # smooth activation function
+  # norm_eps: 1e-5                   # layernorm epsilon
+  # norm_num_groups: 32             # for GroupNorm
+  # center_input_sample: false
+  # downsample_padding: 1
+  # flip_sin_to_cos: true
+  # freq_shift: 0
+  # mid_block_scale_factor: 1
 
 scheduler:
   type: squaredcos_cap_v2
   timesteps: 1000
   beta_start: 0.0001
   beta_end: 0.02
-
-logs: "logs"

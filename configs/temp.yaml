@@ -1,9 +1,9 @@
 data:
   path: data/CelebA-HQ/images_512
-  parquet_path: /dbfs/mnt/ds-space/Hitesh/Datasets/CelebA-HQ/parquet_files/CelebA-HQ.parquet
+  parquet_path: data/celebA_high.parquet
   image_size: 256
   normalize: true
-  caption_path: data/CelebA-HQ/captions.csv
+  caption_path: data/captions.jsonl
 
 checkpoint:
   path: checkpoints/test/
@@ -11,25 +11,27 @@ checkpoint:
   ema_ckpt_name: UNet_ema_ckpt_test.pth
 
 training:
-  batch_size: 4          # small batch for faster iteration
-  validation_split: 0.95   # use only 1% for training
-  epochs: 6               # very short training
-  warmup_epochs: 1        # LPIPS kicks in early
+  batch_size: 4
+  validation_split: 0.9
+  epochs: 16    
+  warmup_epochs: 5
   lr: 1e-4
   grad_accum_steps: 2
   use_ema: true
   ema_beta: 0.995
   step_start_ema: 0
-  num_workers: 4 
+  num_workers: 4
+  use_lpips: false
   
 losses:
   lpips:
-    net: alex      
+    net: vgg   
 
 sampling:
-  dir: output/test_samples
+  dir: output/samples/
   num_samples: 25
-  steps: 50               # fast inference
+  steps: 50
+  guidance_scale: 7.5
 
 model:
   type: unet

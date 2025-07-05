@@ -9,7 +9,7 @@ def load_training_state(checkpoint_path, model, optimizer, discriminator=None, o
     
     if not os.path.exists(checkpoint_path):
         print(f"⚠️ Checkpoint not found at {checkpoint_path}. Starting from scratch.")
-        return 0, float('inf')
+        return 1, float('inf')
         
     ckpt = torch.load(checkpoint_path, map_location=device)
     print(f"✅ Resuming from checkpoint: {checkpoint_path}")

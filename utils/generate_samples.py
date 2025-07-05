@@ -22,7 +22,7 @@ def generate_sample(epoch: int, vae, ema_model, scheduler, tokenizer, text_encod
     scheduler.set_timesteps(50)
     for t in tqdm(scheduler.timesteps, desc=f"Sampling epoch {epoch}"):
         t_batch = torch.full((batch_size,), t, device=device, dtype=torch.long)
-        with torch.cuda.amp.autocast(enabled=(device == 'cuda')):
+        with torch.amp.autocast(device_type='cuda', enabled=(device == 'cuda')):
             noise_pred = ema_model(latents, timestep=t_batch, encoder_hidden_states=text_embeddings).sample
         latents = scheduler.step(noise_pred, t, latents).prev_sample
 

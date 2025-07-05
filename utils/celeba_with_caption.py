@@ -62,8 +62,8 @@ class CelebADataset(Dataset):
 
         return {
             'image': img_tensor,
-            'caption': caption,
-            'img_path': img_path
+            'text': caption,
+            'image_id': img_path
         }
 
 #------------------------------------------------------------------------------
